@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Match Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #6dd5fa, #2980b9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: white;
+    }
+    h1 {
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 3px #000;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      gap: 10px;
+    }
+    .card {
+      width: 80px;
+      height: 80px;
+      background: white;
+      color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      border-radius: 8px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.4s, background 0.4s;
+      user-select: none;
+    }
+    .matched {
+      background: #27ae60;
+      color: white;
+    }
+    .hidden {
+      background: #ecf0f1;
+      color: transparent;
+    }
+    .controls {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background: white;
+      color: #2980b9;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #dff9fb;
+    }
+    .celebrate {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3em;
+      color: #fff;
+      z-index: 10;
+      animation: fadeOut 2s ease-in-out forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Memory Match Game</h1>
+  <div class="controls">
+    <button onclick="startGame()">Restart Game</button>
+  </div>
+  <div class="grid" id="gameGrid"></div>
+
+  <audio id="matchSound" src="https://www.fesliyanstudios.com/play-mp3/4385"></audio>
+  <audio id="winSound" src="https://www.fesliyanstudios.com/play-mp3/6670"></audio>
+
+  <div id="celebration" class="celebrate" style="display: none;">🎉 You Won! 🎉</div>
+
+  <script>
+    const symbols = ['🍎','🍌','🍒','🍇','🍉','🍓'];
+    let cards = [];
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+
+    const matchSound = document.getElementById('matchSound');
+    const winSound = document.getElementById('winSound');
+    const celebration = document.getElementById('celebration');
+
+    function startGame() {
+      cards = [...symbols, ...symbols]
+        .sort(() => 0.5 - Math.random())
+        .map((symbol, index) => ({ id: index, symbol, matched: false }));
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      celebration.style.display = 'none';
+      renderCards();
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('gameGrid');
+      grid.innerHTML = '';
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card ' + (card.matched || card === firstCard || card === secondCard ? '' : 'hidden');
+        cardEl.innerText = card.symbol;
+        cardEl.onclick = () => handleCardClick(card);
+        grid.appendChild(cardEl);
+      });
+    }
+
+    function handleCardClick(card) {
+      if (lockBoard || card.matched || card === firstCard) return;
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        secondCard = card;
+        lockBoard = true;
+        if (firstCard.symbol === secondCard.symbol) {
+          firstCard.matched = true;
+          secondCard.matched = true;
+          matchSound.play();
+          setTimeout(() => {
+            resetTurn();
+            if (cards.every(c => c.matched)) {
+              winSound.play();
+              celebration.style.display = 'flex';
+              setTimeout(() => startGame(), 3000);
+            }
+          }, 500);
+        } else {
+          setTimeout(() => {
+            resetTurn();
+          }, 1000);
+        }
+      }
+      renderCards();
+    }
+
+    function resetTurn() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      renderCards();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
